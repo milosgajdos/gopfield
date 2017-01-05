@@ -121,31 +121,35 @@ func (n *Net) Restore(pattern []float64, maxiters, eqiters int) ([]float64, erro
 	}
 	// we will bound the number of iterations to eqiters and maxiters
 	eqiter, maxiter := 0, 0
-	for eqiter < eqiters && maxiter < maxiters {
+	for maxiter < maxiters {
 		// generate pseudorandom sequence
 		seq := rand.Perm(len(n.neurons))
 		//fmt.Println(seq)
-		for _, j := range seq {
+		for _, i := range seq {
 			sum := 0.0
-			for k := 0; k < len(n.neurons); k++ {
+			for j := 0; j < len(n.neurons); j++ {
 				// some all connections to j-th neuron
-				sum += n.weights.At(j, k) * pattern[k]
+				sum += n.weights.At(i, j) * pattern[j]
 			}
 			// update pattern based on result
 			switch {
-			case sum >= n.bias.At(j, 0):
-				pattern[j] = 1.0
+			case sum >= n.bias.At(i, 0):
+				pattern[i] = 1.0
 			default:
-				pattern[j] = -1.0
+				pattern[i] = -1.0
 			}
 			// update neuron if its state has changed
-			switch n.neurons[j].ChangeState(pattern[j]) {
+			switch n.neurons[i].ChangeState(pattern[i]) {
 			case true:
 				// if the network state changed, reset the counter
 				eqiter = 0
 			default:
 				// if the network state hasnt changed, we are around equlibrium
 				eqiter++
+			}
+			// if we are around equlibrium, exit
+			if eqiter == eqiters {
+				return pattern, nil
 			}
 		}
 		maxiter++
