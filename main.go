@@ -153,7 +153,7 @@ func main() {
 		//encode pattern into Gray Image
 		img := hopfield.Pattern2Image(noisyPattern, image.Rect(0, 0, width, height))
 		// save the noisy image for reference
-		if err := SaveImage("noisy.jpeg", img); err != nil {
+		if err := SaveImage("noisy.png", img); err != nil {
 			fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 			os.Exit(1)
 		}
