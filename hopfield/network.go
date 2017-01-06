@@ -2,20 +2,38 @@ package hopfield
 
 import (
 	"fmt"
+	"math/rand"
 
 	"github.com/gonum/matrix/mat64"
 )
 
-// Net is Hopfield network
-type Net struct {
-	// units are network units
-	// units store their current state
-	units []float64
-	// weights are network units weights
-	weights *mat64.SymDense
+// Neuron is Hopfield network unit
+type Neuron struct {
+	// state is neuron's state: +1/-1
+	state float64
 }
 
-// NewNet creates new Hopfield network and returns it
+// ChangeState changes the state of Neuron and returns true if the state has changed. Otherwise it returns false.
+func (n *Neuron) ChangeState(state float64) bool {
+	if state*n.state < 0.0 {
+		n.state = -n.state
+		return true
+	}
+
+	return false
+}
+
+// Net is Hopfield network
+type Net struct {
+	// network neurons
+	neurons []*Neuron
+	// weights are network neurons weights
+	weights *mat64.SymDense
+	// bias are network unit direct inputs
+	bias *mat64.Vector
+}
+
+// NewNet creates new Hopfield network and returns it.
 // If negative size is supplied NewNet returns error
 func NewNet(size int) (*Net, error) {
 	// can't have negative number of weights
@@ -23,15 +41,25 @@ func NewNet(size int) (*Net, error) {
 		return nil, fmt.Errorf("Invalid network size: %d\n", size)
 	}
 
-	// allocate units slice
-	units := make([]float64, size)
-	// allocate weights matrix
+	// allocate neurons slice and iitialize it
+	neurons := make([]*Neuron, size)
+	for i, _ := range neurons {
+		neurons[i] = new(Neuron)
+	}
+	// allocate weights and bias matrices
 	weights := mat64.NewSymDense(size, nil)
+	bias := mat64.NewVector(size, nil)
 
 	return &Net{
-		units:   units,
+		neurons: neurons,
 		weights: weights,
+		bias:    bias,
 	}, nil
+}
+
+// Neurons returns a slice of network neurons
+func (n Net) Neurons() []*Neuron {
+	return n.neurons
 }
 
 // Weights returns network weights
@@ -39,28 +67,120 @@ func (n Net) Weights() mat64.Symmetric {
 	return n.weights
 }
 
-// Store stores new data patterns in network using Hebbian learning.
-// It returns error if supplied matrix of patterns is nil.
-func (n *Net) Store(data mat64.Matrix) error {
-	if data == nil {
-		return fmt.Errorf("Invalid data supplied: %v\n", data)
-	}
+// Bias return network bias as a vector
+func (n Net) Bias() mat64.Matrix {
+	return n.bias
+}
 
-	patterns, _ := data.Dims()
-	// try to store all patterns
-	for p := 0; p < patterns; p++ {
-		// we only traverse higher triangular matrix
-		for i := 0; i < len(n.units); i++ {
-			for j := i + 1; j < len(n.units); j++ {
-				n.weights.SetSym(i, j, n.weights.At(i, j)+(data.At(p, i)*data.At(p, j))/float64(patterns))
-			}
+// Store stores supplied pattern in network. It modifies the network weights matrix using Hebbian learning.
+// Store returns error if p is nil or if its underlynig data do not have the same dimension as number of network neurons.
+func (n *Net) Store(p Pattern) error {
+	// pattern can't be nil
+	if p == nil {
+		return fmt.Errorf("Invalid pattern supplied: %v\n", p)
+	}
+	// pattern length must be the same as number of neurons
+	if len(p) != len(n.neurons) {
+		return fmt.Errorf("Dimension mismatch: %v\n", p)
+	}
+	// we only traverse higher triangular matrix because we are using Symmetric matrix
+	for i := 0; i < len(n.neurons); i++ {
+		for j := i + 1; j < len(n.neurons); j++ {
+			n.weights.SetSym(i, j, n.weights.At(i, j)+p[i]*p[j])
 		}
 	}
 
 	return nil
 }
 
-// Energy returns network energy
-func (n Net) Energy() float64 {
-	return 0.0
+// Restore tries to restore pattern from the patterns stored in the network.
+// It runs Hopfield network until either a local minima (eqiters) or maxiters number of iterations has been reached.
+// Restore modifies p in place so the returned pattern is closest to any of the patterns stored in the network.
+// It returns error if the supplied pattern is nil or if it does not have the same dimension as number of network neurons.
+func (n *Net) Restore(p Pattern, maxiters, eqiters int) (Pattern, error) {
+	// pattern can't be nil
+	if p == nil {
+		return nil, fmt.Errorf("Invalid pattern supplied: %v\n", p)
+	}
+	// pattern length must be the same as number of neurons
+	if len(p) != len(n.neurons) {
+		return nil, fmt.Errorf("Dimension mismatch: %v\n", p)
+	}
+	// number of max iterations must be a positive integer
+	if maxiters <= 0 {
+		return nil, fmt.Errorf("Invalid number of max iterations: %d\n", maxiters)
+	}
+	// number of equlibrium iterations must be a positive integer
+	if eqiters <= 0 {
+		return nil, fmt.Errorf("Invalid number of equilibrium iterations: %d\n", eqiters)
+	}
+	// set neurons states to the pattern
+	for i, neuron := range n.neurons {
+		neuron.state = p[i]
+	}
+	// we will bound the number of iterations to eqiters and maxiters
+	eqiter, maxiter := 0, 0
+	for maxiter < maxiters {
+		// generate pseudorandom sequence
+		seq := rand.Perm(len(n.neurons))
+		//fmt.Println(seq)
+		for _, i := range seq {
+			sum := 0.0
+			for j := 0; j < len(n.neurons); j++ {
+				// some all connections to j-th neuron
+				sum += n.weights.At(i, j) * p[j]
+			}
+			// update pattern based on result
+			switch {
+			case sum >= n.bias.At(i, 0):
+				p[i] = 1.0
+			default:
+				p[i] = -1.0
+			}
+			// update neuron if its state has changed
+			switch n.neurons[i].ChangeState(p[i]) {
+			case true:
+				// if the network state changed, reset the counter
+				eqiter = 0
+			default:
+				// if the network state hasnt changed, we are around equlibrium
+				eqiter++
+			}
+			// if we are around equlibrium, exit
+			if eqiter == eqiters {
+				return p, nil
+			}
+		}
+		maxiter++
+	}
+
+	return p, nil
+}
+
+// Energy calculates Hopfield network energy for a given pattern and returns it
+// It returns error if the supplied pattern is nil or if it does not have the same dimension as number of network neurons.
+func (n Net) Energy(p Pattern) (float64, error) {
+	// pattern can't be nil
+	if p == nil {
+		return 0.0, fmt.Errorf("Invalid pattern supplied: %v\n", p)
+	}
+	// pattern length must be the same as number of neurons
+	if len(p) != len(n.neurons) {
+		return 0.0, fmt.Errorf("Dimension mismatch: %v\n", p)
+	}
+
+	energy := 0.0
+	// traverse the network higher triangular weights matrix
+	for i := 0; i < len(n.neurons); i++ {
+		for j := i + 1; j < len(n.neurons); j++ {
+			energy += n.weights.At(i, j) * p[i] * p[j]
+		}
+	}
+	bias := 0.0
+	// calculate the bias additions
+	for i := 0; i < len(n.neurons); i++ {
+		bias += n.bias.RawVector().Data[i] * p[i]
+	}
+
+	return -(energy + bias), nil
 }
