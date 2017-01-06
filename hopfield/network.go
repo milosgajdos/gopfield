@@ -72,40 +72,39 @@ func (n Net) Bias() mat64.Matrix {
 	return n.bias
 }
 
-// Store stores pattern in network. It modifies the network weights matrix using Hebbian learning.
-// Store returns error if supplied pattern is nil or if it does not have the same dimension as number of network neurons.
-func (n *Net) Store(pattern []float64) error {
+// Store stores supplied pattern in network. It modifies the network weights matrix using Hebbian learning.
+// Store returns error if p is nil or if its underlynig data do not have the same dimension as number of network neurons.
+func (n *Net) Store(p Pattern) error {
 	// pattern can't be nil
-	if pattern == nil {
-		return fmt.Errorf("Invalid data supplied: %v\n", pattern)
+	if p == nil {
+		return fmt.Errorf("Invalid pattern supplied: %v\n", p)
 	}
 	// pattern length must be the same as number of neurons
-	if len(pattern) != len(n.neurons) {
-		return fmt.Errorf("Dimension mismatch: %v\n", pattern)
+	if len(p) != len(n.neurons) {
+		return fmt.Errorf("Dimension mismatch: %v\n", p)
 	}
 	// we only traverse higher triangular matrix because we are using Symmetric matrix
 	for i := 0; i < len(n.neurons); i++ {
 		for j := i + 1; j < len(n.neurons); j++ {
-			n.weights.SetSym(i, j, n.weights.At(i, j)+pattern[i]*pattern[j])
+			n.weights.SetSym(i, j, n.weights.At(i, j)+p[i]*p[j])
 		}
 	}
 
 	return nil
 }
 
-// Restore tries to restore supplied pattern. It runs Hopfield network until either a local minima (equilibrium) is found or maximum
-// number of iterations has been reached. Equilibrium is measured by eqiters parameter such that if the network state
-// hasn't changed in eqiters number of iteraions we assume the network has reached its energy equilibrium.
-// Restore returns a pattern which is the closest to any of the patterns stored in the network.
+// Restore tries to restore pattern from the patterns stored in the network.
+// It runs Hopfield network until either a local minima (eqiters) or maxiters number of iterations has been reached.
+// Restore modifies p in place so the returned pattern is closest to any of the patterns stored in the network.
 // It returns error if the supplied pattern is nil or if it does not have the same dimension as number of network neurons.
-func (n *Net) Restore(pattern []float64, maxiters, eqiters int) ([]float64, error) {
+func (n *Net) Restore(p Pattern, maxiters, eqiters int) (Pattern, error) {
 	// pattern can't be nil
-	if pattern == nil {
-		return nil, fmt.Errorf("Invalid data supplied: %v\n", pattern)
+	if p == nil {
+		return nil, fmt.Errorf("Invalid pattern supplied: %v\n", p)
 	}
 	// pattern length must be the same as number of neurons
-	if len(pattern) != len(n.neurons) {
-		return nil, fmt.Errorf("Dimension mismatch: %v\n", pattern)
+	if len(p) != len(n.neurons) {
+		return nil, fmt.Errorf("Dimension mismatch: %v\n", p)
 	}
 	// number of max iterations must be a positive integer
 	if maxiters <= 0 {
@@ -117,7 +116,7 @@ func (n *Net) Restore(pattern []float64, maxiters, eqiters int) ([]float64, erro
 	}
 	// set neurons states to the pattern
 	for i, neuron := range n.neurons {
-		neuron.state = pattern[i]
+		neuron.state = p[i]
 	}
 	// we will bound the number of iterations to eqiters and maxiters
 	eqiter, maxiter := 0, 0
@@ -129,17 +128,17 @@ func (n *Net) Restore(pattern []float64, maxiters, eqiters int) ([]float64, erro
 			sum := 0.0
 			for j := 0; j < len(n.neurons); j++ {
 				// some all connections to j-th neuron
-				sum += n.weights.At(i, j) * pattern[j]
+				sum += n.weights.At(i, j) * p[j]
 			}
 			// update pattern based on result
 			switch {
 			case sum >= n.bias.At(i, 0):
-				pattern[i] = 1.0
+				p[i] = 1.0
 			default:
-				pattern[i] = -1.0
+				p[i] = -1.0
 			}
 			// update neuron if its state has changed
-			switch n.neurons[i].ChangeState(pattern[i]) {
+			switch n.neurons[i].ChangeState(p[i]) {
 			case true:
 				// if the network state changed, reset the counter
 				eqiter = 0
@@ -149,29 +148,39 @@ func (n *Net) Restore(pattern []float64, maxiters, eqiters int) ([]float64, erro
 			}
 			// if we are around equlibrium, exit
 			if eqiter == eqiters {
-				return pattern, nil
+				return p, nil
 			}
 		}
 		maxiter++
 	}
 
-	return pattern, nil
+	return p, nil
 }
 
-// Energy returns network energy for a given pattern
-func (n Net) Energy(pattern []float64) float64 {
+// Energy calculates Hopfield network energy for a given pattern and returns it
+// It returns error if the supplied pattern is nil or if it does not have the same dimension as number of network neurons.
+func (n Net) Energy(p Pattern) (float64, error) {
+	// pattern can't be nil
+	if p == nil {
+		return 0.0, fmt.Errorf("Invalid pattern supplied: %v\n", p)
+	}
+	// pattern length must be the same as number of neurons
+	if len(p) != len(n.neurons) {
+		return 0.0, fmt.Errorf("Dimension mismatch: %v\n", p)
+	}
+
 	energy := 0.0
 	// traverse the network higher triangular weights matrix
 	for i := 0; i < len(n.neurons); i++ {
 		for j := i + 1; j < len(n.neurons); j++ {
-			energy += n.weights.At(i, j) * pattern[i] * pattern[j]
+			energy += n.weights.At(i, j) * p[i] * p[j]
 		}
 	}
 	bias := 0.0
 	// calculate the bias additions
 	for i := 0; i < len(n.neurons); i++ {
-		bias += n.bias.RawVector().Data[i] * pattern[i]
+		bias += n.bias.RawVector().Data[i] * p[i]
 	}
 
-	return -(energy + bias)
+	return -(energy + bias), nil
 }

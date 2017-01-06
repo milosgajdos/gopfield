@@ -39,14 +39,14 @@ func AddNoise(p Pattern, pcnt int) Pattern {
 	return np
 }
 
-// Image2Pattern transforms img into pattern that can be used in Hopfield Network
-// It first turns the image into a Grey scaled image and then encodes its pixels into binary values -1/+1
+// Image2Pattern transforms img raw data into binary encoded pattern that can be used in Hopfield Network
+// It first turns the image into a Grey scaled image and then encodes its pixels into binary values of -1/+1
 func Image2Pattern(img image.Image) Pattern {
 	// convert image to Gray scaled image
 	imGray := image.NewGray(image.Rect(0, 0, img.Bounds().Dx(), img.Bounds().Dy()))
 	draw.Draw(imGray, imGray.Bounds(), img, img.Bounds().Min, draw.Src)
 	// convert pixels into floats
-	pattern := make(Pattern, len(imGray.Pix))
+	pattern := make([]float64, len(imGray.Pix))
 	for i := range imGray.Pix {
 		pattern[i] = float64(imGray.Pix[i])
 	}

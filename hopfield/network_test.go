@@ -76,17 +76,17 @@ func TestStore(t *testing.T) {
 	assert.NotNil(n)
 	assert.NoError(err)
 
-	pattern := []float64(nil)
-	errString := "Invalid data supplied: %v\n"
+	var pattern Pattern
+	errString := "Invalid pattern supplied: %v\n"
 	err = n.Store(pattern)
 	assert.EqualError(err, fmt.Sprintf(errString, pattern))
 
-	pattern = []float64{1.0, -1.0}
+	pattern = Pattern{1.0, -1.0}
 	errString = "Dimension mismatch: %v\n"
 	err = n.Store(pattern)
 	assert.EqualError(err, fmt.Sprintf(errString, pattern))
 
-	pattern = []float64{1.0, -1.0, -1.0, 1.0}
+	pattern = Pattern{1.0, -1.0, -1.0, 1.0}
 	err = n.Store(pattern)
 	assert.NoError(err)
 	assert.Equal(n.Weights().At(0, 3), n.Weights().At(3, 0))
@@ -102,24 +102,24 @@ func TestRestore(t *testing.T) {
 	assert.NotNil(n)
 	assert.NoError(err)
 
-	pattern := []float64{1.0, -1.0, -1.0, 1.0}
+	pattern := Pattern{1.0, -1.0, -1.0, 1.0}
 	err = n.Store(pattern)
 	assert.NoError(err)
 
-	pattern = []float64(nil)
-	errString := "Invalid data supplied: %v\n"
+	pattern = Pattern(nil)
+	errString := "Invalid pattern supplied: %v\n"
 	res, err := n.Restore(pattern, maxiters, eqiters)
 	assert.Nil(res)
 	assert.EqualError(err, fmt.Sprintf(errString, pattern))
 
-	pattern = []float64{1.0, -1.0}
+	pattern = Pattern{1.0, -1.0}
 	errString = "Dimension mismatch: %v\n"
 	res, err = n.Restore(pattern, maxiters, eqiters)
 	assert.Nil(res)
 	assert.EqualError(err, fmt.Sprintf(errString, pattern))
 
 	maxiters = -5
-	pattern = []float64{1.0, -1.0, -1.0, 1.0}
+	pattern = Pattern{1.0, -1.0, -1.0, 1.0}
 	errString = "Invalid number of max iterations: %d\n"
 	res, err = n.Restore(pattern, maxiters, eqiters)
 	assert.Nil(res)
@@ -137,7 +137,7 @@ func TestRestore(t *testing.T) {
 	assert.NotNil(res)
 	assert.NoError(err)
 
-	pattern = []float64{-1.0, -1.0, 1.0, 1.0}
+	pattern = Pattern{-1.0, -1.0, 1.0, 1.0}
 	res, err = n.Restore(pattern, maxiters, eqiters)
 	assert.NotNil(res)
 	assert.NoError(err)
@@ -151,7 +151,20 @@ func TestEnergy(t *testing.T) {
 	assert.NotNil(n)
 	assert.NoError(err)
 
-	pattern := []float64{1.0, -1.0, -1.0, 1.0}
-	energy := n.Energy(pattern)
+	pattern := Pattern{1.0, -1.0, -1.0, 1.0}
+	energy, err := n.Energy(pattern)
 	assert.Equal(0.0, energy)
+	assert.NoError(err)
+
+	pattern = Pattern(nil)
+	errString := "Invalid pattern supplied: %v\n"
+	energy, err = n.Energy(pattern)
+	assert.Equal(0.0, energy)
+	assert.EqualError(err, fmt.Sprintf(errString, pattern))
+
+	pattern = Pattern{1.0, -1.0}
+	errString = "Dimension mismatch: %v\n"
+	energy, err = n.Energy(pattern)
+	assert.Equal(0.0, energy)
+	assert.EqualError(err, fmt.Sprintf(errString, pattern))
 }

@@ -120,18 +120,14 @@ func main() {
 	// read in Hopfield network patterns from data files in datadir
 	patterns := make([]hopfield.Pattern, len(files))
 	for i := range files {
+		fmt.Println("reading", path.Join(datadir, files[i].Name()))
 		img, err := ReadImage(path.Join(datadir, files[i].Name()))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 			os.Exit(1)
 		}
 		// convert Image to Pattern
-		pattern, err := hopfield.Image2Pattern(img)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
-			os.Exit(1)
-		}
-		patterns[i] = pattern
+		patterns[i] = hopfield.Image2Pattern(img)
 	}
 
 	// set size to the length of the read pattern
@@ -157,7 +153,7 @@ func main() {
 		//encode pattern into Gray Image
 		img := hopfield.Pattern2Image(noisyPattern, image.Rect(0, 0, width, height))
 		// save the noisy image for reference
-		if err := SaveImage("noisy.png", img); err != nil {
+		if err := SaveImage("noisy.jpeg", img); err != nil {
 			fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 			os.Exit(1)
 		}
@@ -169,12 +165,7 @@ func main() {
 			os.Exit(1)
 		}
 		// convert Image to Pattern
-		pattern, err := hopfield.Image2Pattern(img)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
-			os.Exit(1)
-		}
-		resPattern = pattern
+		resPattern = hopfield.Image2Pattern(img)
 	}
 
 	// restore image from Hopfield network
