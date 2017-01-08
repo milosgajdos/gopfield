@@ -1,12 +1,13 @@
+EXDIR=example
 BINARY=gopfield
 BUILD=go build
 CLEAN=go clean
 INSTALL=go install
 BUILDPATH=./_build
-PACKAGES=$(shell go list ./... | grep -v /vendor/)
+PACKAGES=$(shell go list ./... | grep -vE /vendor/)
 
 build: builddir
-	$(BUILD) -v -o $(BUILDPATH)/gopfield
+	$(BUILD) -v -o $(BUILDPATH)/gopfield example/main.go
 
 all: builddir build
 

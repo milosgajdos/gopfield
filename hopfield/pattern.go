@@ -24,7 +24,7 @@ func Encode(data []float64) Pattern {
 }
 
 // AddNoise adds random noise to pattern and returns it. Noise is added by flipping the sign of existing pattern value.
-// It allows to specify the percentage of noise via pcnt paramter. AddNoise does not modify the pattern in place.
+// It allows to specify the percentage of noise via pcnt parameter. AddNoise does not modify the pattern in place.
 func AddNoise(p Pattern, pcnt int) Pattern {
 	np := make(Pattern, len(p))
 	copy(np, p)
@@ -54,7 +54,7 @@ func Image2Pattern(img image.Image) Pattern {
 	return Encode(pattern)
 }
 
-// Pattern2GrayImage turns passed in Hopfield network pattern to a lossy Gray scaled image from pattern.
+// Pattern2Image turns passed in Hopfield network pattern to a lossy Gray scaled image from pattern.
 // Data to pixel transformation is lossy: non-positive elements are transformed to 0, otherwise 255
 func Pattern2Image(p Pattern, r image.Rectangle) image.Image {
 	// pix is a slice that contains pixels

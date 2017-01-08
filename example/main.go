@@ -67,6 +67,7 @@ func parseCliFlags() error {
 	return nil
 }
 
+// ReadImage reads an image file in path and returns it as image.Image or fails with error
 func ReadImage(path string) (image.Image, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -82,6 +83,7 @@ func ReadImage(path string) (image.Image, error) {
 	return img, nil
 }
 
+// SaveImage saves img image in path or fails with error
 func SaveImage(path string, img image.Image) error {
 	f, err := os.Create(path)
 	if err != nil {
@@ -91,14 +93,12 @@ func SaveImage(path string, img image.Image) error {
 
 	switch filepath.Ext(path) {
 	case "jpeg":
-		return jpeg.Encode(f, img, &jpeg.Options{100})
+		return jpeg.Encode(f, img, &jpeg.Options{Quality: 100})
 	case "png":
-		return png.Encode(f, img)
-	default:
 		return png.Encode(f, img)
 	}
 
-	return nil
+	return fmt.Errorf("Unsupported image format: %s\n", filepath.Ext(path))
 }
 
 func main() {

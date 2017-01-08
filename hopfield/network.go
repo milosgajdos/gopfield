@@ -43,7 +43,7 @@ func NewNet(size int) (*Net, error) {
 
 	// allocate neurons slice and iitialize it
 	neurons := make([]*Neuron, size)
-	for i, _ := range neurons {
+	for i := range neurons {
 		neurons[i] = new(Neuron)
 	}
 	// allocate weights and bias matrices
