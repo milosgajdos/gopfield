@@ -28,6 +28,18 @@ func TestNewnet(t *testing.T) {
 	assert.Error(err)
 }
 
+func TestNeurons(t *testing.T) {
+	assert := assert.New(t)
+
+	size := 5
+	n, err := NewNet(size)
+	assert.NotNil(n)
+	assert.NoError(err)
+
+	neurons := n.Neurons()
+	assert.Equal(size, len(neurons))
+}
+
 func TestWeights(t *testing.T) {
 	assert := assert.New(t)
 
@@ -40,18 +52,6 @@ func TestWeights(t *testing.T) {
 	rows, cols := w.Dims()
 	assert.Equal(rows, size)
 	assert.Equal(cols, size)
-}
-
-func TestNeurons(t *testing.T) {
-	assert := assert.New(t)
-
-	size := 5
-	n, err := NewNet(size)
-	assert.NotNil(n)
-	assert.NoError(err)
-
-	neurons := n.Neurons()
-	assert.Equal(size, len(neurons))
 }
 
 func TestBias(t *testing.T) {
@@ -71,23 +71,34 @@ func TestBias(t *testing.T) {
 func TestStore(t *testing.T) {
 	assert := assert.New(t)
 
+	method := "hebbian"
 	size := 4
 	n, err := NewNet(size)
 	assert.NotNil(n)
 	assert.NoError(err)
 
-	var pattern Pattern
+	var patterns []Pattern
 	errString := "Invalid pattern supplied: %v\n"
-	err = n.Store(pattern)
-	assert.EqualError(err, fmt.Sprintf(errString, pattern))
+	err = n.Store(patterns, method)
+	assert.EqualError(err, fmt.Sprintf(errString, patterns))
 
-	pattern = Pattern{1.0, -1.0}
+	patterns = []Pattern{Pattern{1.0, -1.0}}
 	errString = "Dimension mismatch: %v\n"
-	err = n.Store(pattern)
-	assert.EqualError(err, fmt.Sprintf(errString, pattern))
+	err = n.Store(patterns, method)
+	assert.EqualError(err, fmt.Sprintf(errString, patterns))
 
-	pattern = Pattern{1.0, -1.0, -1.0, 1.0}
-	err = n.Store(pattern)
+	patterns = []Pattern{Pattern{1.0, -1.0, -1.0, 1.0}}
+	err = n.Store(patterns, method)
+	assert.NoError(err)
+	assert.Equal(n.Weights().At(0, 3), n.Weights().At(3, 0))
+
+	// this makes no sense semantically, but it will do for the test
+	err = n.Store(patterns, "storkey")
+	assert.NoError(err)
+	assert.Equal(n.Weights().At(0, 3), n.Weights().At(3, 0))
+
+	// this makes no sense semantically, but it will do for the test
+	err = n.Store(patterns, "foobar")
 	assert.NoError(err)
 	assert.Equal(n.Weights().At(0, 3), n.Weights().At(3, 0))
 }
@@ -98,15 +109,16 @@ func TestRestore(t *testing.T) {
 	size := 4
 	maxiters := 10
 	eqiters := 5
+	method := "hebbian"
 	n, err := NewNet(size)
 	assert.NotNil(n)
 	assert.NoError(err)
 
-	pattern := Pattern{1.0, -1.0, -1.0, 1.0}
-	err = n.Store(pattern)
+	patterns := []Pattern{Pattern{1.0, -1.0, -1.0, 1.0}}
+	err = n.Store(patterns, method)
 	assert.NoError(err)
 
-	pattern = Pattern(nil)
+	pattern := Pattern(nil)
 	errString := "Invalid pattern supplied: %v\n"
 	res, err := n.Restore(pattern, maxiters, eqiters)
 	assert.Nil(res)

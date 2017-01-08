@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	// path to data directory
+	// path to data pattern directory
 	datadir string
 	// path to input data
 	input string
@@ -31,14 +31,17 @@ var (
 	maxiters int
 	// equilibrium iterations
 	eqiters int
+	// learning defines type of learning
+	learning string
 )
 
 func init() {
-	flag.StringVar(&datadir, "datadir", "", "Path to data directory")
-	flag.StringVar(&input, "input", "", "Path to input data")
-	flag.StringVar(&output, "output", "", "Path to output data")
-	flag.IntVar(&maxiters, "maxiters", 0, "Max number of Hopfield net iterations")
+	flag.StringVar(&datadir, "datadir", "", "Path to data pattern directory")
+	flag.StringVar(&input, "input", "", "Path to input data pattern")
+	flag.StringVar(&output, "output", "", "Path to output data pattern")
+	flag.IntVar(&maxiters, "maxiters", 0, "Max number of Hopfield net run iterations")
 	flag.IntVar(&eqiters, "eqiters", 0, "Number of Hopfield net equilibrium iterations")
+	flag.StringVar(&learning, "learning", "hebbian", "Type of Hopfield Network learning: hebbian or storkey")
 }
 
 // parseCliFlags parses command line args
@@ -120,7 +123,6 @@ func main() {
 	// read in Hopfield network patterns from data files in datadir
 	patterns := make([]hopfield.Pattern, len(files))
 	for i := range files {
-		fmt.Println("reading", path.Join(datadir, files[i].Name()))
 		img, err := ReadImage(path.Join(datadir, files[i].Name()))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
@@ -130,7 +132,7 @@ func main() {
 		patterns[i] = hopfield.Image2Pattern(img)
 	}
 
-	// set size to the length of the read pattern
+	// Create new Hopfield Network and set its size to the length of the read pattern
 	n, err := hopfield.NewNet(len(patterns[0]))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
@@ -138,18 +140,16 @@ func main() {
 	}
 
 	// store patterns in Hopfield network
-	for i := range patterns {
-		if err := n.Store(patterns[i]); err != nil {
-			fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
-			os.Exit(1)
-		}
+	if err := n.Store(patterns, learning); err != nil {
+		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
+		os.Exit(1)
 	}
 
 	var resPattern hopfield.Pattern
 	// if no input is passed it we will generate our own noisy data
 	if input == "" {
 		// add some noise into one of the patterns
-		noisyPattern := hopfield.AddNoise(patterns[0], 50)
+		noisyPattern := hopfield.AddNoise(patterns[1], 20)
 		//encode pattern into Gray Image
 		img := hopfield.Pattern2Image(noisyPattern, image.Rect(0, 0, width, height))
 		// save the noisy image for reference

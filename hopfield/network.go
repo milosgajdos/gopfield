@@ -72,25 +72,72 @@ func (n Net) Bias() mat64.Matrix {
 	return n.bias
 }
 
-// Store stores supplied pattern in network. It modifies the network weights matrix using Hebbian learning.
-// Store returns error if p is nil or if its underlynig data do not have the same dimension as number of network neurons.
-func (n *Net) Store(p Pattern) error {
-	// pattern can't be nil
-	if p == nil {
-		return fmt.Errorf("Invalid pattern supplied: %v\n", p)
+// Store stores supplied patterns in network. It modifies the network weights based on specified learning method.
+// If an unsupported learning method is provided, store defaults to Hebbian learning.
+// Store returns error if ps is nil or if any of the data patterns do not have the same dimension as number of network neurons.
+func (n *Net) Store(ps []Pattern, method string) error {
+	// patterns can't be nil
+	if ps == nil || len(ps) == 0 {
+		return fmt.Errorf("Invalid pattern supplied: %v\n", ps)
 	}
 	// pattern length must be the same as number of neurons
-	if len(p) != len(n.neurons) {
-		return fmt.Errorf("Dimension mismatch: %v\n", p)
+	if len(ps[0]) != len(n.neurons) {
+		return fmt.Errorf("Dimension mismatch: %v\n", ps)
 	}
-	// we only traverse higher triangular matrix because we are using Symmetric matrix
-	for i := 0; i < len(n.neurons); i++ {
-		for j := i + 1; j < len(n.neurons); j++ {
-			n.weights.SetSym(i, j, n.weights.At(i, j)+p[i]*p[j])
-		}
+
+	switch method {
+	case "storkey":
+		n.storeStorkey(ps)
+	default:
+		n.storeHebbian(ps)
 	}
 
 	return nil
+}
+
+// storeHebbian uses Hebbian learning to store patterns in Network
+func (n *Net) storeHebbian(ps []Pattern) {
+	// number of patterns
+	pCount := float64(len(ps))
+	// we only traverse higher triangular matrix because we are using Symmetric matrix
+	for i := 0; i < len(n.neurons); i++ {
+		for j := i + 1; j < len(n.neurons); j++ {
+			for k := range ps {
+				n.weights.SetSym(i, j, n.weights.At(i, j)+ps[k][i]*ps[k][j]/pCount)
+			}
+		}
+	}
+}
+
+// storeStorkey uses Storkey learning to store patterns in Network
+func (n *Net) storeStorkey(ps []Pattern) {
+	// we only traverse higher triangular matrix because we are using Symmetric matrix
+	pDim := float64(len(ps[0]))
+	var sum float64
+	for i := 0; i < len(n.neurons); i++ {
+		for j := i + 1; j < len(n.neurons); j++ {
+			for k := range ps {
+				sum = ps[k][i] * ps[k][j]
+				sum -= ps[k][i] * n.localField(ps[k], j, i)
+				sum -= ps[k][j] * n.localField(ps[k], i, j)
+				sum *= 1 / pDim
+				n.weights.SetSym(i, j, n.weights.At(i, j)+sum)
+			}
+		}
+	}
+}
+
+// localField calculates Storkey local field for a given pattern and returns it
+func (n Net) localField(p Pattern, i, j int) float64 {
+	sum := 0.0
+	// calculate sum for all but i and j neuron weights
+	for k := 0; k < len(n.neurons); k++ {
+		if k != i && k != j {
+			sum += n.weights.At(i, k) * p[k]
+		}
+	}
+
+	return sum
 }
 
 // Restore tries to restore pattern from the patterns stored in the network.
@@ -123,7 +170,6 @@ func (n *Net) Restore(p Pattern, maxiters, eqiters int) (Pattern, error) {
 	for maxiter < maxiters {
 		// generate pseudorandom sequence
 		seq := rand.Perm(len(n.neurons))
-		//fmt.Println(seq)
 		for _, i := range seq {
 			sum := 0.0
 			for j := 0; j < len(n.neurons); j++ {
