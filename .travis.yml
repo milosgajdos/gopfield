@@ -3,14 +3,15 @@ go:
   - 1.6
   - 1.7
 
-install:
-  - go get github.com/gonum/matrix/mat64
+before_install:
   - go get github.com/stretchr/testify/assert
+  - go get github.com/golang/lint/golint
 
-before_script:
-  - go get github.com/golang/lint
+install:
+  - go get -d -v ./... && go build -v ./...
 
 script:
+  - make check
   - make test
   - make build
 
