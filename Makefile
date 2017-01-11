@@ -6,16 +6,18 @@ INSTALL=go install
 BUILDPATH=./_build
 PACKAGES=$(shell go list ./... | grep -vE /vendor/)
 
-build: builddir
-	$(BUILD) -v -o $(BUILDPATH)/gopfield example/main.go
+examples: builddir
+	$(BUILD) -v -o $(BUILDPATH)/gopfield $(EXDIR)/main.go
 
-all: builddir build
+all: examples
 
 install:
 	$(INSTALL) ./...
+
 clean:
 	rm -rf $(BUILDPATH)
 	rm -rf $(GOPATH)/bin/$(BINARY)
+
 builddir:
 	mkdir -p $(BUILDPATH)
 
@@ -30,4 +32,4 @@ test:
 		go test -coverprofile="../../../$$pkg/coverage.txt" -covermode=atomic $$pkg || exit; \
 	done
 
-.PHONY: clean build
+.PHONY: clean examples

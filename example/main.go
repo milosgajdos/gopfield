@@ -92,9 +92,9 @@ func SaveImage(path string, img image.Image) error {
 	defer f.Close()
 
 	switch filepath.Ext(path) {
-	case "jpeg":
+	case ".jpeg":
 		return jpeg.Encode(f, img, &jpeg.Options{Quality: 100})
-	case "png":
+	case ".png":
 		return png.Encode(f, img)
 	}
 
