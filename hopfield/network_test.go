@@ -78,12 +78,12 @@ func TestStore(t *testing.T) {
 	assert.NoError(err)
 
 	var patterns []Pattern
-	errString := "Invalid pattern supplied: %v\n"
+	errString := "invalid pattern supplied: %v"
 	err = n.Store(patterns, method)
 	assert.EqualError(err, fmt.Sprintf(errString, patterns))
 
 	patterns = []Pattern{Pattern{1.0, -1.0}}
-	errString = "Dimension mismatch: %v\n"
+	errString = "Dimension mismatch: %v"
 	err = n.Store(patterns, method)
 	assert.EqualError(err, fmt.Sprintf(errString, patterns))
 
@@ -119,27 +119,27 @@ func TestRestore(t *testing.T) {
 	assert.NoError(err)
 
 	pattern := Pattern(nil)
-	errString := "Invalid pattern supplied: %v\n"
+	errString := "invalid pattern supplied: %v"
 	res, err := n.Restore(pattern, maxiters, eqiters)
 	assert.Nil(res)
 	assert.EqualError(err, fmt.Sprintf(errString, pattern))
 
 	pattern = Pattern{1.0, -1.0}
-	errString = "Dimension mismatch: %v\n"
+	errString = "Dimension mismatch: %v"
 	res, err = n.Restore(pattern, maxiters, eqiters)
 	assert.Nil(res)
 	assert.EqualError(err, fmt.Sprintf(errString, pattern))
 
 	maxiters = -5
 	pattern = Pattern{1.0, -1.0, -1.0, 1.0}
-	errString = "Invalid number of max iterations: %d\n"
+	errString = "invalid number of max iterations: %d"
 	res, err = n.Restore(pattern, maxiters, eqiters)
 	assert.Nil(res)
 	assert.EqualError(err, fmt.Sprintf(errString, maxiters))
 	maxiters = 10
 
 	eqiters = -3
-	errString = "Invalid number of equilibrium iterations: %d\n"
+	errString = "invalid number of equilibrium iterations: %d"
 	res, err = n.Restore(pattern, maxiters, eqiters)
 	assert.Nil(res)
 	assert.EqualError(err, fmt.Sprintf(errString, eqiters))
@@ -169,13 +169,13 @@ func TestEnergy(t *testing.T) {
 	assert.NoError(err)
 
 	pattern = Pattern(nil)
-	errString := "Invalid pattern supplied: %v\n"
+	errString := "invalid pattern supplied: %v"
 	energy, err = n.Energy(pattern)
 	assert.Equal(0.0, energy)
 	assert.EqualError(err, fmt.Sprintf(errString, pattern))
 
 	pattern = Pattern{1.0, -1.0}
-	errString = "Dimension mismatch: %v\n"
+	errString = "Dimension mismatch: %v"
 	energy, err = n.Energy(pattern)
 	assert.Equal(0.0, energy)
 	assert.EqualError(err, fmt.Sprintf(errString, pattern))

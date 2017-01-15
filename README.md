@@ -60,33 +60,33 @@ Storing: [1 -1 -1 1]
 Restored: [1 -1 -1 1]
 ```
 
-You can find a more elaborate example in the `example` directory of the project. The example directory also contains a `patterns` subdirectory which contains two [MNIST](http://yann.lecun.com/exdb/mnist/) images: 0 and 4. These are stored in the network. The example program then picks image `4` and adds some random noise to it. Finally it tries to reconstruct it from the network. See below how to use the example program:
+You can find a more elaborate example in the `examples` directory of the project. There is a mnist example which tries to reconstruct a corrupted image loaded from the `patterns` subdirectory which contains two [MNIST](http://yann.lecun.com/exdb/mnist/) images: 0 and 4. These are stored in the Hopfield neural network. The mnist program then picks image `4` and adds some random noise to it. Finallys, it tries to reconstruct the original image from the network. See below how to use the example program:
 
 First you need to build it:
 
 ```
-$ make build
+$ make examples
 ```
 
 If the build succeeds, you will find the built binary in `_build` directory of the project root. You can find out the cli options it provides:
 
 ```
-$  _build/gopfield -h
+$  _build/mnist -h
 ```
 
 Example run:
 
 ```
-$ _build/gopfield -eqiters 40 -maxiters 100 -datadir ./example/patterns/ -output out.png -learning "storkey"
+$ _build/mnist -eqiters 40 -maxiters 100 -datadir ./examples/mnist/patterns/ -output out.png -learning "storkey"
 ```
 
 This will generate two files in directory: `noisy.png` and `out.png`.
 
 `noisy.png` image displays the file that was attempted to be reconstructed from the network:
 
-<img src="./example/noisy.png" alt="Corrupted image 4" width="200">
+<img src="./examples/mnist/noisy.png" alt="Corrupted image 4" width="200">
 
 
 `out.png` image shows the reconstucted image:
 
-<img src="./example/out.png" alt="Reconstructed image 4" width="200">
+<img src="./examples/mnist/out.png" alt="Reconstructed image 4" width="200">

@@ -1,25 +1,28 @@
-EXDIR=example
-BINARY=gopfield
 BUILD=go build
 CLEAN=go clean
 INSTALL=go install
 BUILDPATH=./_build
-PACKAGES=$(shell go list ./... | grep -vE /vendor/)
+PACKAGES=$(shell go list ./... | grep -v /examples/)
+EXAMPLES=$(shell find examples/* -maxdepth 0 -type d -exec basename {} \;)
 
 examples: builddir
-	$(BUILD) -v -o $(BUILDPATH)/gopfield $(EXDIR)/main.go
+	for example in $(EXAMPLES); do \
+		go build -o "$(BUILDPATH)/$$example" "examples/$$example/$$example.go"; \
+	done
 
 all: examples
 
-install:
-	$(INSTALL) ./...
-
-clean:
-	rm -rf $(BUILDPATH)
-	rm -rf $(GOPATH)/bin/$(BINARY)
+mnist: builddir
+	go build -o "$(BUILDPATH)/mnist" "examples/mnist/mnist.go"
 
 builddir:
 	mkdir -p $(BUILDPATH)
+
+install:
+	$(INSTALL) ./$(EXDIR)/...
+
+clean:
+	rm -rf $(BUILDPATH)
 
 check:
 	for pkg in ${PACKAGES}; do \

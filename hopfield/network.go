@@ -38,7 +38,7 @@ type Net struct {
 func NewNet(size int) (*Net, error) {
 	// can't have negative number of weights
 	if size <= 0 {
-		return nil, fmt.Errorf("Invalid network size: %d\n", size)
+		return nil, fmt.Errorf("invalid network size: %d", size)
 	}
 
 	// allocate neurons slice and iitialize it
@@ -78,11 +78,11 @@ func (n Net) Bias() mat64.Matrix {
 func (n *Net) Store(ps []Pattern, method string) error {
 	// patterns can't be nil
 	if ps == nil || len(ps) == 0 {
-		return fmt.Errorf("Invalid pattern supplied: %v\n", ps)
+		return fmt.Errorf("invalid pattern supplied: %v", ps)
 	}
 	// pattern length must be the same as number of neurons
 	if len(ps[0]) != len(n.neurons) {
-		return fmt.Errorf("Dimension mismatch: %v\n", ps)
+		return fmt.Errorf("Dimension mismatch: %v", ps)
 	}
 
 	switch method {
@@ -147,19 +147,19 @@ func (n Net) localField(p Pattern, i, j int) float64 {
 func (n *Net) Restore(p Pattern, maxiters, eqiters int) (Pattern, error) {
 	// pattern can't be nil
 	if p == nil {
-		return nil, fmt.Errorf("Invalid pattern supplied: %v\n", p)
+		return nil, fmt.Errorf("invalid pattern supplied: %v", p)
 	}
 	// pattern length must be the same as number of neurons
 	if len(p) != len(n.neurons) {
-		return nil, fmt.Errorf("Dimension mismatch: %v\n", p)
+		return nil, fmt.Errorf("Dimension mismatch: %v", p)
 	}
 	// number of max iterations must be a positive integer
 	if maxiters <= 0 {
-		return nil, fmt.Errorf("Invalid number of max iterations: %d\n", maxiters)
+		return nil, fmt.Errorf("invalid number of max iterations: %d", maxiters)
 	}
 	// number of equlibrium iterations must be a positive integer
 	if eqiters <= 0 {
-		return nil, fmt.Errorf("Invalid number of equilibrium iterations: %d\n", eqiters)
+		return nil, fmt.Errorf("invalid number of equilibrium iterations: %d", eqiters)
 	}
 	// set neurons states to the pattern
 	for i, neuron := range n.neurons {
@@ -208,11 +208,11 @@ func (n *Net) Restore(p Pattern, maxiters, eqiters int) (Pattern, error) {
 func (n Net) Energy(p Pattern) (float64, error) {
 	// pattern can't be nil
 	if p == nil {
-		return 0.0, fmt.Errorf("Invalid pattern supplied: %v\n", p)
+		return 0.0, fmt.Errorf("invalid pattern supplied: %v", p)
 	}
 	// pattern length must be the same as number of neurons
 	if len(p) != len(n.neurons) {
-		return 0.0, fmt.Errorf("Dimension mismatch: %v\n", p)
+		return 0.0, fmt.Errorf("Dimension mismatch: %v", p)
 	}
 
 	energy := 0.0
