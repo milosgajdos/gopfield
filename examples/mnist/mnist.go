@@ -31,8 +31,8 @@ var (
 	maxiters int
 	// equilibrium iterations
 	eqiters int
-	// learning defines type of learning
-	learning string
+	// training defines type of learning
+	training string
 )
 
 func init() {
@@ -41,7 +41,7 @@ func init() {
 	flag.StringVar(&output, "output", "", "Path to output data pattern")
 	flag.IntVar(&maxiters, "maxiters", 0, "Max number of Hopfield net run iterations")
 	flag.IntVar(&eqiters, "eqiters", 0, "Number of Hopfield net equilibrium iterations")
-	flag.StringVar(&learning, "learning", "hebbian", "Type of Hopfield Network learning: hebbian or storkey")
+	flag.StringVar(&training, "training", "hebbian", "Type of Hopfield Network training: hebbian or storkey")
 }
 
 // parseCliFlags parses command line args
@@ -49,26 +49,26 @@ func parseCliFlags() error {
 	flag.Parse()
 
 	if datadir == "" {
-		return fmt.Errorf("Invalid path to data directory supplied: %s\n", datadir)
+		return fmt.Errorf("invalid path to data directory supplied: %s", datadir)
 	}
 
 	if output == "" {
-		return fmt.Errorf("Invalid output path supplied: %s\n", output)
+		return fmt.Errorf("invalid output path supplied: %s", output)
 	}
 
 	if maxiters <= 0 {
-		return fmt.Errorf("Invalid max number of iterations: %d\n", maxiters)
+		return fmt.Errorf("invalid max number of iterations: %d", maxiters)
 	}
 
 	if eqiters <= 0 {
-		return fmt.Errorf("Invalid number of equilibrium iterations: %d\n", eqiters)
+		return fmt.Errorf("invalid number of equilibrium iterations: %d", eqiters)
 	}
 
 	return nil
 }
 
-// ReadImage reads an image file in path and returns it as image.Image or fails with error
-func ReadImage(path string) (image.Image, error) {
+// readImage reads an image file in path and returns it as image.Image or fails with error
+func readImage(path string) (image.Image, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -83,8 +83,8 @@ func ReadImage(path string) (image.Image, error) {
 	return img, nil
 }
 
-// SaveImage saves img image in path or fails with error
-func SaveImage(path string, img image.Image) error {
+// saveImage saves img image in path or fails with error
+func saveImage(path string, img image.Image) error {
 	f, err := os.Create(path)
 	if err != nil {
 		return err
@@ -98,13 +98,13 @@ func SaveImage(path string, img image.Image) error {
 		return png.Encode(f, img)
 	}
 
-	return fmt.Errorf("Unsupported image format: %s\n", filepath.Ext(path))
+	return fmt.Errorf("Unsupported image format: %s", filepath.Ext(path))
 }
 
 func main() {
 	// exit if incorrect cli params were passed in
 	if err := parseCliFlags(); err != nil {
-		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
+		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
 		os.Exit(1)
 	}
 
@@ -123,7 +123,7 @@ func main() {
 	// read in Hopfield network patterns from data files in datadir
 	patterns := make([]hopfield.Pattern, len(files))
 	for i := range files {
-		img, err := ReadImage(path.Join(datadir, files[i].Name()))
+		img, err := readImage(path.Join(datadir, files[i].Name()))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 			os.Exit(1)
@@ -133,14 +133,14 @@ func main() {
 	}
 
 	// Create new Hopfield Network and set its size to the length of the read pattern
-	n, err := hopfield.NewNet(len(patterns[0]))
+	n, err := hopfield.NewNet(len(patterns[0]), training)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 		os.Exit(1)
 	}
 
 	// store patterns in Hopfield network
-	if err := n.Store(patterns, learning); err != nil {
+	if err := n.Store(patterns); err != nil {
 		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 		os.Exit(1)
 	}
@@ -153,13 +153,13 @@ func main() {
 		//encode pattern into Gray Image
 		img := hopfield.Pattern2Image(noisyPattern, image.Rect(0, 0, width, height))
 		// save the noisy image for reference
-		if err := SaveImage("noisy.png", img); err != nil {
+		if err := saveImage("noisy.png", img); err != nil {
 			fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 			os.Exit(1)
 		}
 		resPattern = noisyPattern
 	} else {
-		img, err := ReadImage(input)
+		img, err := readImage(input)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 			os.Exit(1)
@@ -177,7 +177,7 @@ func main() {
 
 	// render the restored image
 	img := hopfield.Pattern2Image(res, image.Rect(0, 0, width, height))
-	if err := SaveImage(output, img); err != nil {
+	if err := saveImage(output, img); err != nil {
 		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 		os.Exit(1)
 	}

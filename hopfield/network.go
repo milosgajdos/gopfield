@@ -23,6 +23,15 @@ func (n *Neuron) ChangeState(state float64) bool {
 	return false
 }
 
+// StoreFunc stores creates symmetric matrix from supplied patterns ard returns it
+type StoreFunc func([]Pattern) mat64.Symmetric
+
+// trainMethod lists supported training methods
+var store = map[string]StoreFunc{
+	"hebbian": hebbian,
+	"storkey": storkey,
+}
+
 // Net is Hopfield network
 type Net struct {
 	// network neurons
@@ -31,16 +40,22 @@ type Net struct {
 	weights *mat64.SymDense
 	// bias are network unit direct inputs
 	bias *mat64.Vector
+	// store function based on training type
+	storeFunc StoreFunc
 }
 
-// NewNet creates new Hopfield network and returns it.
-// If negative size is supplied NewNet returns error
-func NewNet(size int) (*Net, error) {
+// NewNet creates a new Hopfield network which is trained using the requested training method and returns it.
+// NewNet returns error if either non-positive size is supplied or unsupported training method is supplied.
+func NewNet(size int, method string) (*Net, error) {
 	// can't have negative number of weights
 	if size <= 0 {
 		return nil, fmt.Errorf("invalid network size: %d", size)
 	}
-
+	// if unsupported method is supplied we return error
+	storeFunc, ok := store[method]
+	if !ok {
+		return nil, fmt.Errorf("unsupported training method: %s", method)
+	}
 	// allocate neurons slice and iitialize it
 	neurons := make([]*Neuron, size)
 	for i := range neurons {
@@ -51,9 +66,10 @@ func NewNet(size int) (*Net, error) {
 	bias := mat64.NewVector(size, nil)
 
 	return &Net{
-		neurons: neurons,
-		weights: weights,
-		bias:    bias,
+		neurons:   neurons,
+		weights:   weights,
+		bias:      bias,
+		storeFunc: storeFunc,
 	}, nil
 }
 
@@ -67,77 +83,28 @@ func (n Net) Weights() mat64.Symmetric {
 	return n.weights
 }
 
-// Bias return network bias as a vector
+// Bias returns network bias
 func (n Net) Bias() mat64.Matrix {
 	return n.bias
 }
 
-// Store stores supplied patterns in network. It modifies the network weights based on specified learning method.
-// If an unsupported learning method is provided, store defaults to Hebbian learning.
-// Store returns error if ps is nil or if any of the data patterns do not have the same dimension as number of network neurons.
-func (n *Net) Store(ps []Pattern, method string) error {
+// Store stores supplied patterns in network.
+// Store returns error if patterns is nil or if any of the supplied data patterns do not have the same dimension as network neurons.
+func (n *Net) Store(patterns []Pattern) error {
 	// patterns can't be nil
-	if ps == nil || len(ps) == 0 {
-		return fmt.Errorf("invalid pattern supplied: %v", ps)
+	if patterns == nil || len(patterns) == 0 {
+		return fmt.Errorf("invalid patterns supplied: %v", patterns)
 	}
-	// pattern length must be the same as number of neurons
-	if len(ps[0]) != len(n.neurons) {
-		return fmt.Errorf("Dimension mismatch: %v", ps)
+	// each pattern length must be the same as number of neurons
+	for _, p := range patterns {
+		if len(p) != len(n.neurons) {
+			return fmt.Errorf("pattern dimension mismatch: %v", p)
+		}
 	}
-
-	switch method {
-	case "storkey":
-		n.storeStorkey(ps)
-	default:
-		n.storeHebbian(ps)
-	}
+	// add weights matrices to the network one
+	n.weights.AddSym(n.weights, n.storeFunc(patterns))
 
 	return nil
-}
-
-// storeHebbian uses Hebbian learning to store patterns in Network
-func (n *Net) storeHebbian(ps []Pattern) {
-	// number of patterns
-	pCount := float64(len(ps))
-	// we only traverse higher triangular matrix because we are using Symmetric matrix
-	for i := 0; i < len(n.neurons); i++ {
-		for j := i + 1; j < len(n.neurons); j++ {
-			for k := range ps {
-				n.weights.SetSym(i, j, n.weights.At(i, j)+ps[k][i]*ps[k][j]/pCount)
-			}
-		}
-	}
-}
-
-// storeStorkey uses Storkey learning to store patterns in Network
-func (n *Net) storeStorkey(ps []Pattern) {
-	// we only traverse higher triangular matrix because we are using Symmetric matrix
-	pDim := float64(len(ps[0]))
-	var sum float64
-	for i := 0; i < len(n.neurons); i++ {
-		for j := i + 1; j < len(n.neurons); j++ {
-			for k := range ps {
-				sum = ps[k][i] * ps[k][j]
-				sum -= ps[k][i] * n.localField(ps[k], j, i)
-				sum -= ps[k][j] * n.localField(ps[k], i, j)
-				sum *= 1 / pDim
-				n.weights.SetSym(i, j, n.weights.At(i, j)+sum)
-			}
-		}
-	}
-}
-
-// localField calculates Storkey local field for a given pattern and returns it
-func (n Net) localField(p Pattern, i, j int) float64 {
-	sum := 0.0
-	// calculate sum for all but i and j neuron weights
-	for k := 0; k < len(n.neurons); k++ {
-		if k != i && k != j {
-			sum += n.weights.At(i, k) * p[k]
-		}
-	}
-
-	return sum
 }
 
 // Restore tries to restore pattern from the patterns stored in the network.
@@ -151,7 +118,7 @@ func (n *Net) Restore(p Pattern, maxiters, eqiters int) (Pattern, error) {
 	}
 	// pattern length must be the same as number of neurons
 	if len(p) != len(n.neurons) {
-		return nil, fmt.Errorf("Dimension mismatch: %v", p)
+		return nil, fmt.Errorf("dimension mismatch: %v", p)
 	}
 	// number of max iterations must be a positive integer
 	if maxiters <= 0 {
@@ -212,7 +179,7 @@ func (n Net) Energy(p Pattern) (float64, error) {
 	}
 	// pattern length must be the same as number of neurons
 	if len(p) != len(n.neurons) {
-		return 0.0, fmt.Errorf("Dimension mismatch: %v", p)
+		return 0.0, fmt.Errorf("dimension mismatch: %v", p)
 	}
 
 	energy := 0.0
@@ -229,4 +196,58 @@ func (n Net) Energy(p Pattern) (float64, error) {
 	}
 
 	return -(energy + bias), nil
+}
+
+// hebbian uses Hebbian learning to generate weights matrix
+func hebbian(p []Pattern) mat64.Symmetric {
+	// pattern dimension [same as nr. of neurons]
+	dim := len(p[0])
+	// weights matrix
+	weights := mat64.NewSymDense(dim, nil)
+	// we only traverse higher triangular matrix because we are using Symmetric matrix
+	for i := 0; i < dim; i++ {
+		for j := i + 1; j < dim; j++ {
+			for k := range p {
+				weights.SetSym(i, j, weights.At(i, j)+p[k][i]*p[k][j]/float64(dim))
+			}
+		}
+	}
+
+	return weights
+}
+
+// storkey uses Storkey learning to generate weights matrix
+func storkey(p []Pattern) mat64.Symmetric {
+	// pattern dimension [same as nr. of neurons]
+	dim := len(p[0])
+	// weights matrix
+	weights := mat64.NewSymDense(dim, nil)
+
+	var sum float64
+	for i := 0; i < dim; i++ {
+		for j := i + 1; j < dim; j++ {
+			for k := range p {
+				sum = p[k][i] * p[k][j]
+				sum -= p[k][i] * localField(weights, p[k], j, i)
+				sum -= p[k][j] * localField(weights, p[k], i, j)
+				sum *= 1 / float64(dim)
+				weights.SetSym(i, j, weights.At(i, j)+sum)
+			}
+		}
+	}
+
+	return weights
+}
+
+// localField calculates Storkey local field for a given pattern and returns it
+func localField(w mat64.Symmetric, p Pattern, i, j int) float64 {
+	sum := 0.0
+	// calculate sum for all but i and j neuron weights
+	for k := 0; k < len(p); k++ {
+		if k != i && k != j {
+			sum += w.At(i, k) * p[k]
+		}
+	}
+
+	return sum
 }
