@@ -30,14 +30,14 @@ You can see an example program below. It first creates a Hopfield network patter
 func main() {
         pattern := hopfield.Encode([]float64{0.2, -12.4, 0.0, 3.4})
         // Create new Hopfield Network and set its size to the length of pattern
-	n, err := hopfield.NewNet(len(pattern))
+	n, err := hopfield.NewNet(len(pattern), "hebbian")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 		os.Exit(1)
 	}
         fmt.Println("Storing:", pattern)
 	// store patterns in Hopfield network
-	if err := n.Store([]hopfield.Pattern{pattern}, "hebbian"); err != nil {
+	if err := n.Store([]hopfield.Pattern{pattern}); err != nil {
 		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 		os.Exit(1)
 	}
@@ -77,7 +77,7 @@ $  _build/mnist -h
 Example run:
 
 ```
-$ _build/mnist -eqiters 40 -maxiters 100 -datadir ./examples/mnist/patterns/ -output out.png -learning "storkey"
+$ _build/mnist -eqiters 40 -maxiters 100 -datadir ./examples/mnist/patterns/ -output out.png -training "storkey"
 ```
 
 This will generate two files in directory: `noisy.png` and `out.png`.
