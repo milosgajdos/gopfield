@@ -27,28 +27,37 @@ $ make test
 You can see an example program below. It first creates a Hopfield network pattern based on arbitrary data. The data is encoded into binary values of +1/-1 (see the documentation) using `Encode` function. It is then stored in the network and then restored.
 
 ```go
+package main
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/milosgajdos83/gopfield/hopfield"
+)
+
 func main() {
 	pattern := hopfield.Encode([]float64{0.2, -12.4, 0.0, 3.4})
 	// Create new Hopfield Network and set its size to the length of pattern
-	n, err := hopfield.NewNet(len(pattern), "hebbian")
+	n, err := hopfield.NewNetwork(pattern.Len(), "hebbian")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 		os.Exit(1)
 	}
-	fmt.Println("Storing:", pattern)
+	fmt.Printf("Storing: \n%v\n\n", pattern)
 	// store patterns in Hopfield network
-	if err := n.Store([]hopfield.Pattern{pattern}); err != nil {
+	if err := n.Store([]*hopfield.Pattern{pattern}); err != nil {
 		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 		os.Exit(1)
 	}
 
 	// restore image from Hopfield network
-	res, err := n.Restore(pattern, 20, 10)
+	res, err := n.Restore(pattern, "async", 10)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 		os.Exit(1)
 	}
-	fmt.Println("Restored:", res)
+	fmt.Printf("Restored: \n%v\n", res)
 }
 ```
 
@@ -56,8 +65,17 @@ If you run this program, you will see the pattern being reconstructed correctly:
 
 ```
 $ go run main.go
-Storing: [1 -1 -1 1]
-Restored: [1 -1 -1 1]
+Storing:
+⎡ 1⎤
+⎢-1⎥
+⎢-1⎥
+⎣ 1⎦
+
+Restored:
+⎡ 1⎤
+⎢-1⎥
+⎢-1⎥
+⎣ 1⎦
 ```
 
 You can find a more elaborate example in the `examples` directory of the project. There is a mnist example which tries to reconstruct a corrupted image loaded from the `patterns` subdirectory which contains two [MNIST](http://yann.lecun.com/exdb/mnist/) images: 0 and 4. These are stored in the Hopfield neural network. The mnist program then picks image `4` and adds some random noise to it. Finallys, it tries to reconstruct the original image from the network. See below how to use the example program:
@@ -77,7 +95,7 @@ $  _build/mnist -h
 Example run:
 
 ```
-$ _build/mnist -eqiters 40 -maxiters 100 -datadir ./examples/mnist/patterns/ -output out.png -training "storkey"
+$ _build/mnist -mode "async" -iters 1 -datadir ./examples/mnist/patterns/ -output out.png -training "storkey"
 ```
 
 This will generate two files in directory: `noisy.png` and `out.png`.
