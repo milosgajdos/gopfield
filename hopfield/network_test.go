@@ -4,46 +4,31 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/gonum/matrix/mat64"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestChangeStateNeuron(t *testing.T) {
-	assert := assert.New(t)
-
-	n := &Neuron{state: 1.0}
-	assert.True(!n.ChangeState(1.0))
-	assert.True(n.ChangeState(-1.0))
-}
-
-func TestNewnet(t *testing.T) {
+func TestNewNetwork(t *testing.T) {
 	assert := assert.New(t)
 
 	method := "storkey"
 	size := 5
-	n, err := NewNet(size, method)
+	n, err := NewNetwork(size, method)
 	assert.NotNil(n)
 	assert.NoError(err)
 
-	n, err = NewNet(-2, method)
+	errString := "invalid network size: %d"
+	size = -2
+	n, err = NewNetwork(size, method)
 	assert.Nil(n)
-	assert.Error(err)
+	assert.EqualError(err, fmt.Sprintf(errString, size))
 
-	n, err = NewNet(size, "foobar")
+	errString = "unsupported training method: %s"
+	size = 5
+	method = "foobar"
+	n, err = NewNetwork(size, method)
 	assert.Nil(n)
-	assert.Error(err)
-}
-
-func TestNeurons(t *testing.T) {
-	assert := assert.New(t)
-
-	method := "storkey"
-	size := 5
-	n, err := NewNet(size, method)
-	assert.NotNil(n)
-	assert.NoError(err)
-
-	neurons := n.Neurons()
-	assert.Equal(size, len(neurons))
+	assert.EqualError(err, fmt.Sprintf(errString, method))
 }
 
 func TestWeights(t *testing.T) {
@@ -51,7 +36,7 @@ func TestWeights(t *testing.T) {
 
 	method := "storkey"
 	size := 5
-	n, err := NewNet(size, method)
+	n, err := NewNetwork(size, method)
 	assert.NotNil(n)
 	assert.NoError(err)
 
@@ -66,7 +51,7 @@ func TestBias(t *testing.T) {
 
 	method := "storkey"
 	size := 5
-	n, err := NewNet(size, method)
+	n, err := NewNetwork(size, method)
 	assert.NotNil(n)
 	assert.NoError(err)
 
@@ -76,32 +61,69 @@ func TestBias(t *testing.T) {
 	assert.Equal(1, cols)
 }
 
+func TestCapacity(t *testing.T) {
+	assert := assert.New(t)
+
+	method := "storkey"
+	size := 10
+	n, err := NewNetwork(size, method)
+	assert.NotNil(n)
+	assert.NoError(err)
+	capStorkey := n.Capacity()
+
+	method = "hebbian"
+	n2, err := NewNetwork(size, method)
+	assert.NotNil(n2)
+	assert.NoError(err)
+	capHebbian := n2.Capacity()
+	// in the same sized network storkey training provides higher capacity
+	assert.True(capStorkey > capHebbian)
+}
+
+func TestMemorised(t *testing.T) {
+	assert := assert.New(t)
+
+	n, err := NewNetwork(5, "hebbian")
+	assert.NotNil(n)
+	assert.NoError(err)
+	assert.True(n.Memorised() == 0)
+}
+
 func TestStore(t *testing.T) {
 	assert := assert.New(t)
 
 	size := 4
 	// Hebbian learning
-	n, err := NewNet(size, "hebbian")
+	n, err := NewNetwork(size, "hebbian")
 	assert.NotNil(n)
 	assert.NoError(err)
 
-	var patterns []Pattern
+	var patterns []*Pattern
 	errString := "invalid patterns supplied: %v"
 	err = n.Store(patterns)
 	assert.EqualError(err, fmt.Sprintf(errString, patterns))
 
-	patterns = []Pattern{Pattern{1.0, -1.0}}
-	errString = "pattern dimension mismatch: %v"
+	patterns = []*Pattern{nil}
+	errString = "invalid pattern supplied: %v"
 	err = n.Store(patterns)
 	assert.EqualError(err, fmt.Sprintf(errString, patterns[0]))
 
-	patterns = []Pattern{Pattern{1.0, -1.0, -1.0, 1.0}}
+	data := []float64{1.0, -1.0}
+	v := mat64.NewVector(len(data), data)
+	patterns = []*Pattern{&Pattern{v: v}}
+	errString = "invalid pattern dimension: %d"
+	err = n.Store(patterns)
+	assert.EqualError(err, fmt.Sprintf(errString, patterns[0].Len()))
+
+	data = []float64{1.0, -1.0, -1.0, 1.0}
+	v = mat64.NewVector(len(data), data)
+	patterns = []*Pattern{&Pattern{v: v}}
 	err = n.Store(patterns)
 	assert.NoError(err)
 	assert.Equal(n.Weights().At(0, 3), n.Weights().At(3, 0))
 
 	// Storkey learning
-	n, err = NewNet(size, "storkey")
+	n, err = NewNetwork(size, "storkey")
 	assert.NotNil(n)
 	assert.NoError(err)
 
@@ -114,52 +136,55 @@ func TestRestore(t *testing.T) {
 	assert := assert.New(t)
 
 	size := 4
-	maxiters := 10
-	eqiters := 5
+	iters := 10
+	mode := "async"
 	method := "hebbian"
-	n, err := NewNet(size, method)
+	n, err := NewNetwork(size, method)
 	assert.NotNil(n)
 	assert.NoError(err)
 
-	patterns := []Pattern{Pattern{1.0, -1.0, -1.0, 1.0}}
+	data := []float64{1.0, -1.0, -1.0, 1.0}
+	v := mat64.NewVector(len(data), data)
+	patterns := []*Pattern{&Pattern{v: v}}
 	err = n.Store(patterns)
 	assert.NoError(err)
 
-	pattern := Pattern(nil)
+	var pattern *Pattern
 	errString := "invalid pattern supplied: %v"
-	res, err := n.Restore(pattern, maxiters, eqiters)
+	res, err := n.Restore(pattern, mode, iters)
 	assert.Nil(res)
 	assert.EqualError(err, fmt.Sprintf(errString, pattern))
 
-	pattern = Pattern{1.0, -1.0}
-	errString = "dimension mismatch: %v"
-	res, err = n.Restore(pattern, maxiters, eqiters)
+	pattern = &Pattern{v: mat64.NewVector(2, []float64{-1.0, 1.0})}
+	errString = "invalid pattern dimension: %v"
+	res, err = n.Restore(pattern, mode, iters)
 	assert.Nil(res)
-	assert.EqualError(err, fmt.Sprintf(errString, pattern))
+	assert.EqualError(err, fmt.Sprintf(errString, pattern.Len()))
 
-	maxiters = -5
-	pattern = Pattern{1.0, -1.0, -1.0, 1.0}
-	errString = "invalid number of max iterations: %d"
-	res, err = n.Restore(pattern, maxiters, eqiters)
+	iters = -5
+	data = []float64{1.0, -1.0, -1.0, 1.0}
+	v = mat64.NewVector(len(data), data)
+	pattern = &Pattern{v: v}
+	errString = "invalid number of iterations: %d"
+	res, err = n.Restore(pattern, mode, iters)
 	assert.Nil(res)
-	assert.EqualError(err, fmt.Sprintf(errString, maxiters))
-	maxiters = 10
+	assert.EqualError(err, fmt.Sprintf(errString, iters))
 
-	eqiters = -3
-	errString = "invalid number of equilibrium iterations: %d"
-	res, err = n.Restore(pattern, maxiters, eqiters)
-	assert.Nil(res)
-	assert.EqualError(err, fmt.Sprintf(errString, eqiters))
-	eqiters = 5
-
-	res, err = n.Restore(pattern, maxiters, eqiters)
+	iters = 1
+	res, err = n.Restore(pattern, mode, iters)
 	assert.NotNil(res)
 	assert.NoError(err)
 
-	pattern = Pattern{-1.0, -1.0, 1.0, 1.0}
-	res, err = n.Restore(pattern, maxiters, eqiters)
+	mode = "sync"
+	res, err = n.Restore(pattern, mode, iters)
 	assert.NotNil(res)
 	assert.NoError(err)
+
+	mode = "foobar"
+	errString = "unsupported mode: %s"
+	res, err = n.Restore(pattern, mode, iters)
+	assert.Nil(res)
+	assert.EqualError(err, fmt.Sprintf(errString, mode))
 }
 
 func TestEnergy(t *testing.T) {
@@ -167,24 +192,26 @@ func TestEnergy(t *testing.T) {
 
 	size := 4
 	method := "hebbian"
-	n, err := NewNet(size, method)
+	n, err := NewNetwork(size, method)
 	assert.NotNil(n)
 	assert.NoError(err)
 
-	pattern := Pattern{1.0, -1.0, -1.0, 1.0}
+	var pattern *Pattern
+	errString := "invalid pattern supplied: %v"
 	energy, err := n.Energy(pattern)
 	assert.Equal(0.0, energy)
+	assert.EqualError(err, fmt.Sprintf(errString, pattern))
+
+	pattern = &Pattern{v: mat64.NewVector(2, []float64{1.0, -1.0})}
+	errString = "invalid pattern dimension: %v"
+	energy, err = n.Energy(pattern)
+	assert.Equal(0.0, energy)
+	assert.EqualError(err, fmt.Sprintf(errString, pattern.Len()))
+
+	data := []float64{1.0, -1.0, -1.0, 1.0}
+	v := mat64.NewVector(len(data), data)
+	pattern = &Pattern{v: v}
+	energy, err = n.Energy(pattern)
+	assert.Equal(0.0, energy)
 	assert.NoError(err)
-
-	pattern = Pattern(nil)
-	errString := "invalid pattern supplied: %v"
-	energy, err = n.Energy(pattern)
-	assert.Equal(0.0, energy)
-	assert.EqualError(err, fmt.Sprintf(errString, pattern))
-
-	pattern = Pattern{1.0, -1.0}
-	errString = "dimension mismatch: %v"
-	energy, err = n.Energy(pattern)
-	assert.Equal(0.0, energy)
-	assert.EqualError(err, fmt.Sprintf(errString, pattern))
 }

@@ -28,19 +28,19 @@ var (
 	// path to retored data
 	output string
 	// max number of iterations
-	maxiters int
-	// equilibrium iterations
-	eqiters int
+	iters int
 	// training defines type of learning
 	training string
+	// restore mode
+	mode string
 )
 
 func init() {
 	flag.StringVar(&datadir, "datadir", "", "Path to data pattern directory")
 	flag.StringVar(&input, "input", "", "Path to input data pattern")
 	flag.StringVar(&output, "output", "", "Path to output data pattern")
-	flag.IntVar(&maxiters, "maxiters", 0, "Max number of Hopfield net run iterations")
-	flag.IntVar(&eqiters, "eqiters", 0, "Number of Hopfield net equilibrium iterations")
+	flag.StringVar(&mode, "mode", "async", "Restore pattern mode")
+	flag.IntVar(&iters, "iters", 1, "Max number of Hopfield net run iterations")
 	flag.StringVar(&training, "training", "hebbian", "Type of Hopfield Network training: hebbian or storkey")
 }
 
@@ -56,12 +56,8 @@ func parseCliFlags() error {
 		return fmt.Errorf("invalid output path supplied: %s", output)
 	}
 
-	if maxiters <= 0 {
-		return fmt.Errorf("invalid max number of iterations: %d", maxiters)
-	}
-
-	if eqiters <= 0 {
-		return fmt.Errorf("invalid number of equilibrium iterations: %d", eqiters)
+	if iters <= 0 {
+		return fmt.Errorf("invalid max number of iterations: %d", iters)
 	}
 
 	return nil
@@ -121,7 +117,7 @@ func main() {
 	}
 
 	// read in Hopfield network patterns from data files in datadir
-	patterns := make([]hopfield.Pattern, len(files))
+	patterns := make([]*hopfield.Pattern, len(files))
 	for i := range files {
 		img, err := readImage(path.Join(datadir, files[i].Name()))
 		if err != nil {
@@ -133,7 +129,7 @@ func main() {
 	}
 
 	// Create new Hopfield Network and set its size to the length of the read pattern
-	n, err := hopfield.NewNet(len(patterns[0]), training)
+	n, err := hopfield.NewNetwork(patterns[0].Len(), training)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 		os.Exit(1)
@@ -145,7 +141,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	var resPattern hopfield.Pattern
+	var resPattern *hopfield.Pattern
 	// if no input is passed it we will generate our own noisy data
 	if input == "" {
 		// add some noise into one of the patterns
@@ -169,7 +165,7 @@ func main() {
 	}
 
 	// restore image from Hopfield network
-	res, err := n.Restore(resPattern, maxiters, eqiters)
+	res, err := n.Restore(resPattern, mode, iters)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", err)
 		os.Exit(1)
