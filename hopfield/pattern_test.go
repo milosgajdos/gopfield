@@ -6,15 +6,15 @@ import (
 	"image/draw"
 	"testing"
 
-	"github.com/gonum/matrix/mat64"
 	"github.com/stretchr/testify/assert"
+	"gonum.org/v1/gonum/mat"
 )
 
 func TestVec(t *testing.T) {
 	assert := assert.New(t)
 
 	data := []float64{1.0, 2.0}
-	v := mat64.NewVector(len(data), data)
+	v := mat.NewVecDense(len(data), data)
 	p := &Pattern{v: v}
 	assert.EqualValues(v, p.Vec())
 }
@@ -23,7 +23,7 @@ func TestRawData(t *testing.T) {
 	assert := assert.New(t)
 
 	data := []float64{1.0, 2.0}
-	v := mat64.NewVector(len(data), data)
+	v := mat.NewVecDense(len(data), data)
 	p := &Pattern{v: v}
 	assert.EqualValues(p.RawData(), v.RawVector().Data)
 }
@@ -32,7 +32,7 @@ func TestAt(t *testing.T) {
 	assert := assert.New(t)
 
 	data := []float64{1.0, 2.0}
-	v := mat64.NewVector(len(data), data)
+	v := mat.NewVecDense(len(data), data)
 	p := &Pattern{v: v}
 
 	assert.Equal(p.At(0), data[0])
@@ -42,7 +42,7 @@ func TestSet(t *testing.T) {
 	assert := assert.New(t)
 
 	data := []float64{1.0, 2.0}
-	v := mat64.NewVector(len(data), data)
+	v := mat.NewVecDense(len(data), data)
 	p := &Pattern{v: v}
 
 	val := -10.10

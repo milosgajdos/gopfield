@@ -6,15 +6,15 @@ import (
 	"math/rand"
 	"strings"
 
-	"github.com/gonum/matrix/mat64"
+	"gonum.org/v1/gonum/mat"
 )
 
 // Network is Hopfield network
 type Network struct {
 	// weights are network neurons weights
-	weights *mat64.SymDense
+	weights *mat.SymDense
 	// bias are network unit direct inputs
-	bias *mat64.Vector
+	bias *mat.VecDense
 	// method is training method
 	method string
 	// memorised keeps a count of memorized patterns
@@ -33,8 +33,8 @@ func NewNetwork(size int, method string) (*Network, error) {
 		return nil, fmt.Errorf("unsupported training method: %s", method)
 	}
 	// allocate weights and bias matrices
-	weights := mat64.NewSymDense(size, nil)
-	bias := mat64.NewVector(size, nil)
+	weights := mat.NewSymDense(size, nil)
+	bias := mat.NewVecDense(size, nil)
 
 	return &Network{
 		weights: weights,
@@ -44,12 +44,12 @@ func NewNetwork(size int, method string) (*Network, error) {
 }
 
 // Weights returns network weights
-func (n Network) Weights() mat64.Matrix {
+func (n Network) Weights() mat.Matrix {
 	return n.weights
 }
 
 // Bias returns network bias
-func (n Network) Bias() mat64.Matrix {
+func (n Network) Bias() mat.Matrix {
 	return n.bias
 }
 
@@ -143,8 +143,8 @@ func (n Network) Energy(p *Pattern) (float64, error) {
 		return 0.0, fmt.Errorf("invalid pattern dimension: %v", p.Len())
 	}
 	// hopfield energy
-	energy := -0.5 * mat64.Inner(p.Vec(), n.weights, p.Vec())
-	energy += mat64.Dot(n.bias, p.Vec())
+	energy := -0.5 * mat.Inner(p.Vec(), n.weights, p.Vec())
+	energy += mat.Dot(n.bias, p.Vec())
 
 	return energy, nil
 }
@@ -154,7 +154,7 @@ func (n *Network) storeHebbian(patterns []*Pattern) {
 	// pattern dimension [same as nr. of neurons]
 	dim := patterns[0].Len()
 	// w stores partial weights for each pattern
-	w := mat64.NewSymDense(dim, nil)
+	w := mat.NewSymDense(dim, nil)
 	// we only traverse higher triangular matrix because we are using Symmetric matrix
 	for i := 0; i < dim; i++ {
 		for j := i + 1; j < dim; j++ {
@@ -172,7 +172,7 @@ func (n *Network) storeStorkey(patterns []*Pattern) {
 	// pattern dimension [same as nr. of neurons]
 	dim := patterns[0].Len()
 	// weights matrix
-	w := mat64.NewSymDense(dim, nil)
+	w := mat.NewSymDense(dim, nil)
 	// we only traverse higher triangular matrix because we are using Symmetric matrix
 	var sum float64
 	for i := 0; i < dim; i++ {
@@ -191,7 +191,7 @@ func (n *Network) storeStorkey(patterns []*Pattern) {
 }
 
 // localField calculates Storkey local field for a given pattern and returns it
-func localField(w *mat64.SymDense, p *Pattern, i, j int) float64 {
+func localField(w *mat.SymDense, p *Pattern, i, j int) float64 {
 	sum := 0.0
 	// calculate sum for all but i and j neuron weights
 	for k := 0; k < p.Len(); k++ {

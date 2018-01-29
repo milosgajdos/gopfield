@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gonum/matrix/mat64"
 	"github.com/stretchr/testify/assert"
+	"gonum.org/v1/gonum/mat"
 )
 
 func TestNewNetwork(t *testing.T) {
@@ -109,14 +109,14 @@ func TestStore(t *testing.T) {
 	assert.EqualError(err, fmt.Sprintf(errString, patterns[0]))
 
 	data := []float64{1.0, -1.0}
-	v := mat64.NewVector(len(data), data)
+	v := mat.NewVecDense(len(data), data)
 	patterns = []*Pattern{&Pattern{v: v}}
 	errString = "invalid pattern dimension: %d"
 	err = n.Store(patterns)
 	assert.EqualError(err, fmt.Sprintf(errString, patterns[0].Len()))
 
 	data = []float64{1.0, -1.0, -1.0, 1.0}
-	v = mat64.NewVector(len(data), data)
+	v = mat.NewVecDense(len(data), data)
 	patterns = []*Pattern{&Pattern{v: v}}
 	err = n.Store(patterns)
 	assert.NoError(err)
@@ -144,7 +144,7 @@ func TestRestore(t *testing.T) {
 	assert.NoError(err)
 
 	data := []float64{1.0, -1.0, -1.0, 1.0}
-	v := mat64.NewVector(len(data), data)
+	v := mat.NewVecDense(len(data), data)
 	patterns := []*Pattern{&Pattern{v: v}}
 	err = n.Store(patterns)
 	assert.NoError(err)
@@ -155,7 +155,7 @@ func TestRestore(t *testing.T) {
 	assert.Nil(res)
 	assert.EqualError(err, fmt.Sprintf(errString, pattern))
 
-	pattern = &Pattern{v: mat64.NewVector(2, []float64{-1.0, 1.0})}
+	pattern = &Pattern{v: mat.NewVecDense(2, []float64{-1.0, 1.0})}
 	errString = "invalid pattern dimension: %v"
 	res, err = n.Restore(pattern, mode, iters)
 	assert.Nil(res)
@@ -163,7 +163,7 @@ func TestRestore(t *testing.T) {
 
 	iters = -5
 	data = []float64{1.0, -1.0, -1.0, 1.0}
-	v = mat64.NewVector(len(data), data)
+	v = mat.NewVecDense(len(data), data)
 	pattern = &Pattern{v: v}
 	errString = "invalid number of iterations: %d"
 	res, err = n.Restore(pattern, mode, iters)
@@ -202,14 +202,14 @@ func TestEnergy(t *testing.T) {
 	assert.Equal(0.0, energy)
 	assert.EqualError(err, fmt.Sprintf(errString, pattern))
 
-	pattern = &Pattern{v: mat64.NewVector(2, []float64{1.0, -1.0})}
+	pattern = &Pattern{v: mat.NewVecDense(2, []float64{1.0, -1.0})}
 	errString = "invalid pattern dimension: %v"
 	energy, err = n.Energy(pattern)
 	assert.Equal(0.0, energy)
 	assert.EqualError(err, fmt.Sprintf(errString, pattern.Len()))
 
 	data := []float64{1.0, -1.0, -1.0, 1.0}
-	v := mat64.NewVector(len(data), data)
+	v := mat.NewVecDense(len(data), data)
 	pattern = &Pattern{v: v}
 	energy, err = n.Energy(pattern)
 	assert.Equal(0.0, energy)

@@ -31,3 +31,4 @@ gopfield
 
 # ignore HTML files produced by gopfield
 *.html
+vendor/

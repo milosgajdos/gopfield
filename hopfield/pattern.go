@@ -6,23 +6,23 @@ import (
 	"image/draw"
 	"math/rand"
 
-	"github.com/gonum/matrix/mat64"
+	"gonum.org/v1/gonum/mat"
 )
 
 // Pattern is a data pattern
 type Pattern struct {
 	// v is a vector which stores binary data
-	v *mat64.Vector
+	v *mat.VecDense
 }
 
 // String implements Stringer interface
 func (p *Pattern) String() string {
-	fa := mat64.Formatted(p.v, mat64.Prefix(""), mat64.Squeeze())
+	fa := mat.Formatted(p.v, mat.Prefix(""), mat.Squeeze())
 	return fmt.Sprintf("%v", fa)
 }
 
 // Vec returns internal data vector
-func (p *Pattern) Vec() *mat64.Vector {
+func (p *Pattern) Vec() *mat.VecDense {
 	return p.v
 }
 
@@ -69,7 +69,7 @@ func Encode(data []float64) *Pattern {
 			data[i] = 1.0
 		}
 	}
-	v := mat64.NewVector(len(data), data)
+	v := mat.NewVecDense(len(data), data)
 
 	return &Pattern{
 		v: v,

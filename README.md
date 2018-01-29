@@ -16,6 +16,12 @@ Get the source code:
 $ go get -u github.com/milosgajdos83/gopfield
 ```
 
+**Make sure you've got all the dependencies** (`go get -u` should retrieve them, but this project might use a specific version of `gonum` so make sure you run the following command):
+
+```
+$ make dep
+```
+
 Run the tests:
 
 ```
