@@ -24,11 +24,8 @@ install:
 clean:
 	rm -rf $(BUILDPATH)
 
-godep:
-	go get -u github.com/golang/dep/cmd/dep
-
-dep: godep
-	dep ensure
+dep:
+	go get ./...
 
 check:
 	for pkg in ${PACKAGES}; do \

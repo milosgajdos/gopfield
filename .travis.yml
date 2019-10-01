@@ -1,18 +1,13 @@
 language: go
 go:
-  - 1.6
-  - 1.7
-  - 1.8
-  - 1.9
+  - "1.12"
+  - "1.13"
 
 before_install:
-  - go get github.com/stretchr/testify/assert
-  - go get github.com/golang/lint/golint
-
-install:
-  - go get -d -v ./... && go build -v ./...
+  - go get golang.org/x/lint
 
 script:
+  - make dep
   - make check
   - make test
   - make all
