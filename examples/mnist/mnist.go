@@ -11,7 +11,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/milosgajdos83/gopfield/hopfield"
+	"github.com/milosgajdos/gopfield/hopfield"
 )
 
 const (

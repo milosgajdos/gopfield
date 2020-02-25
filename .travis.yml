@@ -4,14 +4,9 @@ go:
   - "1.13"
 env:
   - GO111MODULE=on
-before_install:
-  - go get golang.org/x/lint/golint
 
 script:
   - make dep
   - make check
   - make test
   - make all
-
-after_success:
-  - bash <(curl -s https://codecov.io/bash)

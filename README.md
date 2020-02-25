@@ -1,10 +1,9 @@
 # gopfield
 
-[![GoDoc](https://godoc.org/github.com/milosgajdos83/gopfield?status.svg)](https://godoc.org/github.com/milosgajdos83/gopfield)
+[![GoDoc](https://godoc.org/github.com/milosgajdos/gopfield?status.svg)](https://godoc.org/github.com/milosgajdos/gopfield)
 [![License](https://img.shields.io/:license-apache-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Travis CI](https://travis-ci.org/milosgajdos83/gopfield.svg?branch=master)](https://travis-ci.org/milosgajdos83/gopfield)
-[![Go Report Card](https://goreportcard.com/badge/github.com/milosgajdos83/gopfield)](https://goreportcard.com/report/github.com/milosgajdos83/gopfield)
-[![codecov](https://codecov.io/gh/milosgajdos83/gopfield/branch/master/graph/badge.svg)](https://codecov.io/gh/milosgajdos83/gopfield)
+[![Travis CI](https://travis-ci.org/milosgajdos/gopfield.svg?branch=master)](https://travis-ci.org/milosgajdos/gopfield)
+[![Go Report Card](https://goreportcard.com/badge/github.com/milosgajdos/gopfield)](https://goreportcard.com/report/github.com/milosgajdos/gopfield)
 
 This project provides an implementation of [Hopfield network](https://en.wikipedia.org/wiki/Hopfield_network) in Go. It implements both [Hebbian](https://en.wikipedia.org/wiki/Hopfield_network#Hebbian_learning_rule_for_Hopfield_networks) and [Storkey](https://en.wikipedia.org/wiki/Hopfield_network#The_Storkey_learning_rule) training algorithms. The goal is to provide a simple API to build Hopfield networks in `Go`.
 
@@ -13,7 +12,7 @@ This project provides an implementation of [Hopfield network](https://en.wikiped
 Get the source code:
 
 ```
-$ go get -u github.com/milosgajdos83/gopfield
+$ go get -u github.com/milosgajdos/gopfield
 ```
 
 **Make sure you've got all the dependencies** (`go get -u` should retrieve them, but this project might use a specific version of `gonum` so make sure you run the following command):
@@ -39,7 +38,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/milosgajdos83/gopfield/hopfield"
+	"github.com/milosgajdos/gopfield/hopfield"
 )
 
 func main() {
