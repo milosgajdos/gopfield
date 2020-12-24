@@ -1,4 +1,4 @@
-# gopfield
+# gopfield: Hopfield neural networks in Go
 
 [![Build Status](https://github.com/milosgajdos/gopfield/workflows/CI/badge.svg)](https://github.com/milosgajdos/gopfield/actions?query=workflow%3ACI)
 [![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/milosgajdos/gopfield)
