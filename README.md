@@ -1,8 +1,9 @@
 # gopfield
 
+[![Build Status](https://github.com/milosgajdos/gopfield/workflows/CI/badge.svg)](https://github.com/milosgajdos/gopfield/actions?query=workflow%3ACI)
+[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/milosgajdos/gopfield)
 [![GoDoc](https://godoc.org/github.com/milosgajdos/gopfield?status.svg)](https://godoc.org/github.com/milosgajdos/gopfield)
 [![License](https://img.shields.io/:license-apache-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Travis CI](https://travis-ci.org/milosgajdos/gopfield.svg?branch=master)](https://travis-ci.org/milosgajdos/gopfield)
 [![Go Report Card](https://goreportcard.com/badge/github.com/milosgajdos/gopfield)](https://goreportcard.com/report/github.com/milosgajdos/gopfield)
 
 This project provides an implementation of [Hopfield network](https://en.wikipedia.org/wiki/Hopfield_network) in Go. It implements both [Hebbian](https://en.wikipedia.org/wiki/Hopfield_network#Hebbian_learning_rule_for_Hopfield_networks) and [Storkey](https://en.wikipedia.org/wiki/Hopfield_network#The_Storkey_learning_rule) training algorithms. The goal is to provide a simple API to build Hopfield networks in `Go`.

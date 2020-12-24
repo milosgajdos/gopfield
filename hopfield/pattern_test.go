@@ -47,10 +47,12 @@ func TestSet(t *testing.T) {
 
 	val := -10.10
 	err := p.Set(0, val)
+	assert.NoError(err)
 	assert.InDelta(p.At(0), -1.0, 0.0001)
 
 	val = 10.10
 	err = p.Set(0, val)
+	assert.NoError(err)
 	assert.InDelta(p.At(0), 1.0, 0.0001)
 
 	i := 100
@@ -66,8 +68,7 @@ func TestLen(t *testing.T) {
 	p := Encode(data)
 	assert.Equal(p.Len(), len(data))
 
-	p = Encode([]float64{})
-	assert.Equal(p.Len(), 0)
+	assert.Panics(func() { p = Encode(nil) })
 
 	p = &Pattern{}
 	assert.Equal(p.Len(), 0)
@@ -105,7 +106,7 @@ func TestImage2Pattern(t *testing.T) {
 
 	img := image.NewGray(image.Rect(0, 0, 2, 2))
 	// draw a white image i.e. all pixels are set to 1
-	draw.Draw(img, img.Bounds(), image.White, image.ZP, draw.Src)
+	draw.Draw(img, img.Bounds(), image.White, image.Point{}, draw.Src)
 	imgP := Image2Pattern(img)
 	// 1-pixels are encoded to 1s
 	p := Encode([]float64{1.0, 1.0, 1.0, 1.0})

@@ -59,8 +59,10 @@ func (p *Pattern) Len() int {
 	return p.v.Len()
 }
 
-// Encode encodes data to a pattern of values: +1/-1. Non-positive data items are set to -1, positive ones are set to +1
-// Encode modifies the data slice in place and returns pointer to Pattern.
+// Encode encodes data to a pattern of values: +1/-1 as follows:
+// Non-positive data items are set to -1, positive values are set to +1.
+// Encode modifies the data slice in place and returns a pointer to Pattern.
+// It panics if data is nil or zero-length slice!
 func Encode(data []float64) *Pattern {
 	for i := 0; i < len(data); i++ {
 		if data[i] <= 0.0 {

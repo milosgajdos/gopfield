@@ -74,7 +74,7 @@ func (n Network) Memorised() int {
 // Store returns error if patterns is nil or if any of the patterns do not have the same dimension as number network neurons.
 func (n *Network) Store(patterns []*Pattern) error {
 	// patterns can't be nil
-	if patterns == nil || len(patterns) == 0 {
+	if len(patterns) == 0 {
 		return fmt.Errorf("invalid patterns supplied: %v", patterns)
 	}
 	_, nCount := n.weights.Dims()
