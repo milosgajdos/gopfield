@@ -110,14 +110,14 @@ func TestStore(t *testing.T) {
 
 	data := []float64{1.0, -1.0}
 	v := mat.NewVecDense(len(data), data)
-	patterns = []*Pattern{&Pattern{v: v}}
+	patterns = []*Pattern{{v: v}}
 	errString = "invalid pattern dimension: %d"
 	err = n.Store(patterns)
 	assert.EqualError(err, fmt.Sprintf(errString, patterns[0].Len()))
 
 	data = []float64{1.0, -1.0, -1.0, 1.0}
 	v = mat.NewVecDense(len(data), data)
-	patterns = []*Pattern{&Pattern{v: v}}
+	patterns = []*Pattern{{v: v}}
 	err = n.Store(patterns)
 	assert.NoError(err)
 	assert.Equal(n.Weights().At(0, 3), n.Weights().At(3, 0))
@@ -145,7 +145,7 @@ func TestRestore(t *testing.T) {
 
 	data := []float64{1.0, -1.0, -1.0, 1.0}
 	v := mat.NewVecDense(len(data), data)
-	patterns := []*Pattern{&Pattern{v: v}}
+	patterns := []*Pattern{{v: v}}
 	err = n.Store(patterns)
 	assert.NoError(err)
 
